@@ -1,1 +1,1 @@
-README.txt
+This code fetches my game collection data from Board Game Geek and stores it locally as JSON.
