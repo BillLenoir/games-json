@@ -2,12 +2,17 @@ const fs = require('fs');
 const convert = require('xml-js');
 
 // File names for the various data we store.
-const rawDataFile = './rawData.json';
-const ownDataFile = './ownData.json';
-const prevownedDataFile = './prevownedData.json';
-const fortradeDataFile = './fortradeData.json';
-const wanttobuyDataFile = './wanttobuyData.json';
+const rawDataFile = 'data/rawData.json';
+const ownDataFile = 'data/ownData.json';
+const prevownedDataFile = 'data/prevownedData.json';
+const fortradeDataFile = 'data/fortradeData.json';
+const wanttobuyDataFile = 'data/wanttobuyData.json';
 
+// The arrays to which the raw data will be parsed out
+const ownData = [];
+const prevownedData = [];
+const fortradeData = [];
+const wanttobuyData = [];
 
 const fetchData = () => {
 
@@ -44,10 +49,6 @@ const fetchData = () => {
 }
 
 const parseData = (rawData) => {
-    const ownData = [];
-    const prevownedData = [];
-    const fortradeData = [];
-    const wanttobuyData = [];
 
     fs.readFile(rawData, (err, data) => {
         if (err) {
@@ -67,34 +68,17 @@ const parseData = (rawData) => {
                     console.log(`This game doesn't count: ${readData.items.item[i].name._text}`);
                 }
             }
-            fs.writeFile(ownDataFile, JSON.stringify(ownData), err => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Own File successfully written');
-                }
-            });
-            fs.writeFile(wanttobuyDataFile, JSON.stringify(wanttobuyData), err => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Want To Buy File successfully written');
-                }
-            });
-            fs.writeFile(prevownedDataFile, JSON.stringify(prevownedData), err => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Previously Owned File successfully written');
-                }
-            });
-            fs.writeFile(fortradeDataFile, JSON.stringify(fortradeData), err => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('For Sale File successfully written');
-                }
-            });
+        }
+    });
+    return;
+}
+
+const writeFiles = (file, data, description) => {
+    fs.writeFile(file, JSON.stringify(data), err => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(`${description} successfully written`);
         }
     });
     return;
@@ -105,5 +89,9 @@ if (process.argv[2] === true) {
     fetchData();
 }
 
-// Always parse the data.
+// Always parse and write the data.
 parseData(rawDataFile);
+writeFiles(ownDataFile, ownData, 'Games owned file');
+writeFiles(prevownedDataFile, prevownedData, 'Previously owned file');
+writeFiles(fortradeDataFile, fortradeData, 'Games for sale file');
+writeFiles(wanttobuyDataFile, wanttobuyData, 'Want list');
