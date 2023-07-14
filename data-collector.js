@@ -90,4 +90,5 @@ const writeFile = (file, data, message) => {
     return;
 }
 
+// This triggers everything
 fetchData();
