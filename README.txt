@@ -1,1 +1,11 @@
-This code fetches my game collection data from Board Game Geek and stores it locally as JSON.
+# Bill's Game collection
+
+After downloading the code, run:
+
+`npm init`
+
+Then, from the command line, run:
+
+`node data-collector.js [BGG User Name]`
+
+The BGG User Name is optional, will use BillLenoir if one is not provided.

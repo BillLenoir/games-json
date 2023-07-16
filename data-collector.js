@@ -13,7 +13,7 @@ const fetchData = () => {
 
     // The argument passed in to indicate for whose collection should we collect data.
     // Defaults to BillLenoir if not provided.
-    const user = process.argv[3] || 'BillLenoir';
+    const user = process.argv[2] || 'BillLenoir';
 
     // This is the URL used to request the collection data.
     const dataRequest = new Request(`https://boardgamegeek.com/xmlapi/collection/${user}`);
@@ -23,6 +23,7 @@ const fetchData = () => {
     // write it to disk.
     fetch(dataRequest)
         .then((response) => {
+            // Catching the usual HTTP SNAFU
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -30,6 +31,22 @@ const fetchData = () => {
         })
         .then((response) => {
             response = convert.xml2json(response, { compact: true, spaces: 4 });
+            const responseData = JSON.parse(response);
+            // An invalid username still returns a valid response, so have to check it separately.
+            // The format of the response in this case is different, so need to check if this exists.
+            if (responseData.errors) {
+                if (responseData.errors.error.message._text === 'Invalid username specified') {
+                    throw new Error(`Invalid username specified: ${user}`);
+                } else {
+                    throw new Error(`Some other error occured: ${responseData.errors}`);
+                }
+            }
+            // This case has been very difficult to test. I'll come back to it
+            // if (responseData.message) {
+            //     if (responseData.message === 'Your request for this collection has been accepted and will be processed. Please try again later for access.') {
+            //         throw new Error('Try again');
+            //     }
+            // }
             return response;
         })
         .then((response) => {
@@ -58,15 +75,24 @@ const parseData = (rawData) => {
         } else {
             const readData = JSON.parse(data);
             for (let i = 0; i < readData.items.item.length; i++) {
+                let recorded = false;
                 if (readData.items.item[i].status._attributes.own === '1') {
                     ownData.push(readData.items.item[i]);
-                } else if (readData.items.item[i].status._attributes.wanttobuy === '1') {
+                    recorded = true;
+                }
+                if (readData.items.item[i].status._attributes.wanttobuy === '1') {
                     wanttobuyData.push(readData.items.item[i])
-                } else if (readData.items.item[i].status._attributes.prevowned === '1') {
+                    recorded = true;
+                }
+                if (readData.items.item[i].status._attributes.prevowned === '1') {
                     prevownedData.push(readData.items.item[i])
-                } else if (readData.items.item[i].status._attributes.fortrade === '1') {
+                    recorded = true;
+                }
+                if (readData.items.item[i].status._attributes.fortrade === '1') {
                     fortradeData.push(readData.items.item[i])
-                } else {
+                    recorded = true;
+                }
+                if (recorded === false) {
                     console.log(`This game doesn't count: ${readData.items.item[i].name._text}`);
                 }
             }
