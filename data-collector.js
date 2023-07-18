@@ -8,20 +8,21 @@ const prevownedDataFile = './data/prevownedData.json';
 const fortradeDataFile = './data/fortradeData.json';
 const wanttobuyDataFile = './data/wanttobuyData.json';
 
+//let fetchGamesArray = [];
 
-const fetchData = () => {
+const fetchCollectionData = () => {
 
     // The argument passed in to indicate for whose collection should we collect data.
     // Defaults to BillLenoir if not provided.
     const user = process.argv[2] || 'BillLenoir';
 
     // This is the URL used to request the collection data.
-    const dataRequest = new Request(`https://boardgamegeek.com/xmlapi/collection/${user}`);
+    const collectionDataRequest = new Request(`https://boardgamegeek.com/xmlapi/collection/${user}`);
 
     // Fetch the data from Board Game Geek,
     // convert it to XML, and then
     // write it to disk.
-    fetch(dataRequest)
+    fetch(collectionDataRequest)
         .then((response) => {
             // Catching the usual HTTP SNAFU
             if (!response.ok) {
@@ -78,18 +79,22 @@ const parseData = (rawData) => {
                 let recorded = false;
                 if (readData.items.item[i].status._attributes.own === '1') {
                     ownData.push(readData.items.item[i]);
+//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
                     recorded = true;
                 }
                 if (readData.items.item[i].status._attributes.wanttobuy === '1') {
                     wanttobuyData.push(readData.items.item[i])
+//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
                     recorded = true;
                 }
                 if (readData.items.item[i].status._attributes.prevowned === '1') {
                     prevownedData.push(readData.items.item[i])
+//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
                     recorded = true;
                 }
                 if (readData.items.item[i].status._attributes.fortrade === '1') {
                     fortradeData.push(readData.items.item[i])
+//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
                     recorded = true;
                 }
                 if (recorded === false) {
@@ -101,8 +106,8 @@ const parseData = (rawData) => {
             writeFile(prevownedDataFile, prevownedData, 'Previously Owned File');
             writeFile(fortradeDataFile, fortradeData, 'For Sale File');
         }
+//        fetchGameData(fetchGamesArray);
     });
-    return;
 }
 
 const writeFile = (file, data, message) => {
@@ -116,5 +121,21 @@ const writeFile = (file, data, message) => {
     return;
 }
 
+//const fetchGameData = (fetchGamesArray) => {
+//    const fetchGamesList = fetchGamesArray.join(',')
+//    const gameDataRequest = new Request(`https://boardgamegeek.com/xmlapi/boardgame/${fetchGamesList}`);
+//    fetch(gameDataRequest)
+//        .then((response) => {
+//            // Catching the usual HTTP SNAFU
+//            if (!response.ok) {
+//                throw new Error(`HTTP error! Status: ${response.status}`);
+//            }
+//            return response.text();
+//        })
+//        .then((response) => {
+//            console.log(response);
+//        });
+//}
+
 // This triggers everything
-fetchData();
+fetchCollectionData();
