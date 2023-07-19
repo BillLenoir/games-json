@@ -1,141 +1,72 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const convert = require('xml-js');
 
-// File names for the various data we store.
-const rawDataFile = './data/rawData.json';
-const ownDataFile = './data/ownData.json';
-const prevownedDataFile = './data/prevownedData.json';
-const fortradeDataFile = './data/fortradeData.json';
-const wanttobuyDataFile = './data/wanttobuyData.json';
+const collectionDataUrl = 'https://boardgamegeek.com/xmlapi/collection/';
 
-//let fetchGamesArray = [];
+async function fetchAndProcessCollectionData(username) {
+    try {
+        const xmlData = await fetchCollectionDataFromBGG(username);
+        const rawDataFile = './data/rawData.json';
+        const message = 'Raw Data File';
+        await writeDataToFile(rawDataFile, xmlData, message);
+        const parsedData = await parseData(rawDataFile);
 
-const fetchCollectionData = () => {
+        const dataFiles = [
+            { file: './data/ownData.json', data: parsedData.ownData, message: 'Own File' },
+            { file: './data/wanttobuyData.json', data: parsedData.wanttobuyData, message: 'Want To Buy File' },
+            { file: './data/prevownedData.json', data: parsedData.prevownedData, message: 'Previously Owned File' },
+            { file: './data/fortradeData.json', data: parsedData.fortradeData, message: 'For Sale File' },
+        ];
 
-    // The argument passed in to indicate for whose collection should we collect data.
-    // Defaults to BillLenoir if not provided.
-    const user = process.argv[2] || 'BillLenoir';
-
-    // This is the URL used to request the collection data.
-    const collectionDataRequest = new Request(`https://boardgamegeek.com/xmlapi/collection/${user}`);
-
-    // Fetch the data from Board Game Geek,
-    // convert it to XML, and then
-    // write it to disk.
-    fetch(collectionDataRequest)
-        .then((response) => {
-            // Catching the usual HTTP SNAFU
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then((response) => {
-            response = convert.xml2json(response, { compact: true, spaces: 4 });
-            const responseData = JSON.parse(response);
-            // An invalid username still returns a valid response, so have to check it separately.
-            // The format of the response in this case is different, so need to check if this exists.
-            if (responseData.errors) {
-                if (responseData.errors.error.message._text === 'Invalid username specified') {
-                    throw new Error(`Invalid username specified: ${user}`);
-                } else {
-                    throw new Error(`Some other error occured: ${responseData.errors}`);
-                }
-            }
-            // This case has been very difficult to test. I'll come back to it
-            // if (responseData.message) {
-            //     if (responseData.message === 'Your request for this collection has been accepted and will be processed. Please try again later for access.') {
-            //         throw new Error('Try again');
-            //     }
-            // }
-            return response;
-        })
-        .then((response) => {
-            fs.writeFile(rawDataFile, response, err => {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log('Raw Data File successfully written');
-                }
-            });
-        })
-        .then(() => {
-            parseData(rawDataFile);
-        });
+        for (const { file, data, message } of dataFiles) {
+            await writeDataToFile(file, data, message);
+        }
+    } catch (error) {
+        console.error('Error:', error.message);
+    }
 }
 
-const parseData = (rawData) => {
+async function fetchCollectionDataFromBGG(username) {
+    const collectionDataRequest = new Request(`${collectionDataUrl}${username}`);
+    const response = await fetch(collectionDataRequest);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const xmlData = await response.text();
+    const responseData = convert.xml2json(xmlData, { compact: true, spaces: 4 });
+    const returnData = JSON.parse(responseData);
+    return returnData;
+}
+
+async function writeDataToFile(file, data, message) {
+    await fs.writeFile(file, JSON.stringify(data));
+    console.log(`${message} successfully written`);
+}
+
+async function parseData(rawData) {
+    const data = await fs.readFile(rawData);
+    const readData = JSON.parse(data);
     const ownData = [];
     const prevownedData = [];
     const fortradeData = [];
     const wanttobuyData = [];
 
-    fs.readFile(rawData, (err, data) => {
-        if (err) {
-            console.log(err);
+    for (const game of readData.items.item) {
+        const { own, wanttobuy, prevowned, fortrade } = game.status._attributes;
+
+        if (own === '1' || wanttobuy === '1' || prevowned === '1' || fortrade === '1') {
+            if (own === '1') ownData.push(game);
+            if (wanttobuy === '1') wanttobuyData.push(game);
+            if (prevowned === '1') prevownedData.push(game);
+            if (fortrade === '1') fortradeData.push(game);
         } else {
-            const readData = JSON.parse(data);
-            for (let i = 0; i < readData.items.item.length; i++) {
-                let recorded = false;
-                if (readData.items.item[i].status._attributes.own === '1') {
-                    ownData.push(readData.items.item[i]);
-//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
-                    recorded = true;
-                }
-                if (readData.items.item[i].status._attributes.wanttobuy === '1') {
-                    wanttobuyData.push(readData.items.item[i])
-//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
-                    recorded = true;
-                }
-                if (readData.items.item[i].status._attributes.prevowned === '1') {
-                    prevownedData.push(readData.items.item[i])
-//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
-                    recorded = true;
-                }
-                if (readData.items.item[i].status._attributes.fortrade === '1') {
-                    fortradeData.push(readData.items.item[i])
-//                    fetchGamesArray.push(readData.items.item[i]._attributes.objectid);
-                    recorded = true;
-                }
-                if (recorded === false) {
-                    console.log(`This game doesn't count: ${readData.items.item[i].name._text}`);
-                }
-            }
-            writeFile(ownDataFile, ownData, 'Own File');
-            writeFile(wanttobuyDataFile, wanttobuyData, 'Want To Buy File');
-            writeFile(prevownedDataFile, prevownedData, 'Previously Owned File');
-            writeFile(fortradeDataFile, fortradeData, 'For Sale File');
+            console.log(`-- This game doesn't count: ${game.name._text}`);
         }
-//        fetchGameData(fetchGamesArray);
-    });
+    }
+
+    return { ownData, wanttobuyData, prevownedData, fortradeData };
 }
 
-const writeFile = (file, data, message) => {
-    fs.writeFile(file, JSON.stringify(data), err => {
-        if (err) {
-            console.log(err);
-        } else {
-            console.log(`${message} successfully written`);
-        }
-    });
-    return;
-}
-
-//const fetchGameData = (fetchGamesArray) => {
-//    const fetchGamesList = fetchGamesArray.join(',')
-//    const gameDataRequest = new Request(`https://boardgamegeek.com/xmlapi/boardgame/${fetchGamesList}`);
-//    fetch(gameDataRequest)
-//        .then((response) => {
-//            // Catching the usual HTTP SNAFU
-//            if (!response.ok) {
-//                throw new Error(`HTTP error! Status: ${response.status}`);
-//            }
-//            return response.text();
-//        })
-//        .then((response) => {
-//            console.log(response);
-//        });
-//}
-
-// This triggers everything
-fetchCollectionData();
+fetchAndProcessCollectionData('BillLenoir');
