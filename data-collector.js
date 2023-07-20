@@ -1,14 +1,14 @@
 const fs = require('fs').promises;
 const convert = require('xml-js');
 
-const collectionDataUrl = 'https://boardgamegeek.com/xmlapi/collection/';
+const bggBaseURL = 'https://boardgamegeek.com/xmlapi/';
 
 async function fetchAndProcessCollectionData(username) {
     try {
-        const xmlData = await fetchCollectionDataFromBGG(username);
+        const collectionData = await fetchCollectionDataFromBGG(username);
         const rawDataFile = './data/rawData.json';
         const message = 'Raw Data File';
-        await writeDataToFile(rawDataFile, xmlData, message);
+        await writeDataToFile(rawDataFile, collectionData, message);
         const parsedData = await parseData(rawDataFile);
 
         const dataFiles = [
@@ -27,8 +27,22 @@ async function fetchAndProcessCollectionData(username) {
 }
 
 async function fetchCollectionDataFromBGG(username) {
-    const collectionDataRequest = new Request(`${collectionDataUrl}${username}`);
+    const collectionDataRequest = new Request(`${bggBaseURL}collection/${username}`);
     const response = await fetch(collectionDataRequest);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const xmlData = await response.text();
+    const responseData = convert.xml2json(xmlData, { compact: true, spaces: 4 });
+    const returnData = JSON.parse(responseData);
+    return returnData;
+}
+
+async function fetchGameDataFromBGG(gameID) {
+    const gameDataRequest = new Request(`${bggBaseURL}boardgame/${gameID}`);
+    const response = await fetch(gameDataRequest);
 
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -54,13 +68,43 @@ async function parseData(rawData) {
     const wanttobuyData = [];
 
     for (const game of readData.items.item) {
+
+        // These are required attributes
+        const gameID = game._attributes.objectid;
+        const gameTitle = game.name._text;
+
+        // These are optional attributes, so have to test their existance
+        let gameYearPublished = "";
+        let gameThumbnail = "";
+        let gamePublisher = "";
+
+        if (game.yearpublished) {
+            gameYearPublished = game.yearpublished._text;
+        }
+        if (game.thumbnail) {
+            gameThumbnail = game.thumbnail._text;
+        }
+
+        const gameData = await fetchGameDataFromBGG(gameID);
+        if (gameData.boardgames.boardgame.boardgamepublisher._text) {
+            gamePublisher = gameData.boardgames.boardgame.boardgamepublisher._text;
+        }
+
+        const gameJSON = {
+            "id": gameID,
+            "title": gameTitle,
+            "yearpublished": gameYearPublished,
+            "thumbnail": gameThumbnail,
+            "publisher": gamePublisher
+        }
+
         const { own, wanttobuy, prevowned, fortrade } = game.status._attributes;
 
         if (own === '1' || wanttobuy === '1' || prevowned === '1' || fortrade === '1') {
-            if (own === '1') ownData.push(game);
-            if (wanttobuy === '1') wanttobuyData.push(game);
-            if (prevowned === '1') prevownedData.push(game);
-            if (fortrade === '1') fortradeData.push(game);
+            if (own === '1') ownData.push(gameJSON);
+            if (wanttobuy === '1') wanttobuyData.push(gameJSON);
+            if (prevowned === '1') prevownedData.push(gameJSON);
+            if (fortrade === '1') fortradeData.push(gameJSON);
         } else {
             console.log(`-- This game doesn't count: ${game.name._text}`);
         }
@@ -69,4 +113,6 @@ async function parseData(rawData) {
     return { ownData, wanttobuyData, prevownedData, fortradeData };
 }
 
-fetchAndProcessCollectionData('BillLenoir');
+const user = process.argv[2] || 'BillLenoir';
+
+fetchAndProcessCollectionData(user);
