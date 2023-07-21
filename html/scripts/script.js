@@ -36,13 +36,15 @@ const loadGames = (url) => {
             const pageNum = urlArray.pop();
             const route = urlArray.join('/');
             renderPagination(pageNum, route);
+        })
+        .then(() => {
             setWidths();
             window.scrollTo(0, 0);
         });
 }
 
 const renderGameList = (games) => {
-    listDescription.innerHTML = "<h2>Games Bill owns, sorted alphabetically by title.</h2>";
+    listDescription.innerHTML = "Games Bill owns, sorted alphabetically by title.";
 
     let gameHTML = "<table cellspacing='0' cellpadding='0' id='gameDataTable'><tbody>";
     for (let i = 0; i < games.length; i++) {
@@ -58,7 +60,13 @@ const renderGameList = (games) => {
             gameHTML += `(${games[i].yearpublished})`;
         }
         if (games[i].publisher) {
-            gameHTML += `<br>${games[i].publisher}`;
+            gameHTML += '<br>';
+            const publisherList = games[i].publisher.split('xxxxx');
+            gameHTML += publisherList.shift();
+            if (publisherList.length > 0) {
+                const otherPublishers = publisherList.join(', ');
+                gameHTML += ` <span class='publisherList' title='${otherPublishers}'>+ ${publisherList.length} more</span>`;
+            }
         }
         gameHTML += '</td>';
         gameHTML += '</tr>';
@@ -71,7 +79,7 @@ const renderGameList = (games) => {
 const renderPagination = (pageNum, route) => {
     pageNum = Number(pageNum);
     let newPageNum;
-    
+
     if (pageNum > 2) {
         newPageNum = 1;
         topFirst.removeAttribute('disabled');
@@ -84,7 +92,7 @@ const renderPagination = (pageNum, route) => {
         bottomFirst.removeAttribute('onclick');
         bottomFirst.setAttribute('disabled', '');
     }
-    
+
     if (pageNum > 1) {
         newPageNum = pageNum - 1;
         topPrev.removeAttribute('disabled');
@@ -130,6 +138,8 @@ const renderPagination = (pageNum, route) => {
 }
 
 const setWidths = () => {
-    paginationTop.style.width = `${document.getElementById('gameDataTable').clientWidth}px`;
-    paginationBottom.style.width = `${document.getElementById('gameDataTable').clientWidth}px`;
+    newWidth = document.getElementById('gameDataTable').clientWidth;
+    listDescription.style.width =  `${newWidth}px`;
+    paginationTop.style.width = `${newWidth}px`;
+    paginationBottom.style.width = `${newWidth}px`;
 }

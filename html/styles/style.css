@@ -13,8 +13,12 @@ h1 {
     font-size: 2em;
 }
 
-h2 {
-    font-size: 1.25em;
+h2#listDescription {
+    margin:0 2em;
+    padding:1em 0 0;
+    background-color: #999999;
+    text-align: center;
+    font-size:1em;
 }
 
 div#paginationTop, div#paginationBottom {
@@ -54,3 +58,12 @@ table#gameDataTable td.noImage {
 table#gameDataTable td img {
     border:2px solid #000000;
 }
+
+table#gameDataTable td span.publisherList {
+    padding:0 .25em;
+    background-color: #cccccc;
+    color:darkblue;
+    cursor: pointer;
+    display: inline-block;
+}
+
