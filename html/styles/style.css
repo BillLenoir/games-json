@@ -1,28 +1,56 @@
 body {
     margin:0;
-    padding:0;
+    padding:1em;
     font-size: 100%;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
-table {
-    margin:1em 2em;
-    border: 1px solid #666666;
-    border-bottom: none;
-    padding:0;
+h1, h2, h3 {
+    font-family: 'Times New Roman', Times, serif;
 }
 
-td {
+h1 {
+    font-size: 2em;
+}
+
+h2 {
+    font-size: 1.25em;
+}
+
+div#paginationTop, div#paginationBottom {
+    margin:0 2em;
+    padding:1em 0;
+    background-color: #999999;
+    text-align: center;
+}
+
+span.gameCount {
+    padding: 0 3em;
+}
+
+table#gameDataTable {
+    margin:0 2em;
+    padding:0 1.0em;
+    background-color: #999999;
+}
+
+table#gameDataTable td {
     margin:0;
-    border-bottom: 1px solid #666666;
+    border-bottom: 1px solid #999999;
     padding:0.5em 1.0em;
+    background-color: #ffffff;
 }
 
-td:first-child {
+table#gameDataTable td:first-child {
     text-align: right;
 }
 
-td.noImage {
+table#gameDataTable td.noImage {
     font-size:0.8em;
     font-style: italic;
     color:#999999;
+}
+
+table#gameDataTable td img {
+    border:2px solid #000000;
 }
