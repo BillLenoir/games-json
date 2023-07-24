@@ -7,6 +7,7 @@ const bggBaseURL = 'https://boardgamegeek.com/xmlapi/';
 // to request, transform, process, and save the collection data.
 async function fetchAndProcessCollectionData(username) {
     try {
+
         // Fetch the data from BGG.
         const collectionData = await fetchCollectionDataFromBGG(username);
         const rawDataFile = './data/rawData.json';
@@ -50,6 +51,7 @@ async function fetchCollectionDataFromBGG(username) {
     const returnData = JSON.parse(responseData);
     return returnData;
 }
+
 // Handles all writing to disk.
 async function writeDataToFile(file, data, message) {
     await fs.writeFile(file, JSON.stringify(data));
@@ -98,9 +100,10 @@ async function parseData(rawData) {
         // Data from the game request
 
         let gameDescription = "";
-        if (gameData.boardgames.boardgame.description) {
-            gameDescription = gameData.boardgames.boardgame.description;
+        if (gameData.boardgames.boardgame.description._text) {
+            gameDescription = gameData.boardgames.boardgame.description._text;
         }
+
 
         // Some games have more than 1 publisher and the data structure for this differs
         // If it is an array, that means there's more than one. We extract just the publisher
@@ -128,7 +131,8 @@ async function parseData(rawData) {
             "title": gameTitle,
             "yearpublished": gameYearPublished,
             "thumbnail": gameThumbnail,
-            "publisher": gamePublisher
+            "publisher": gamePublisher,
+            "description": gameDescription
         }
 
         // This is how we determine in which file the game belongs.

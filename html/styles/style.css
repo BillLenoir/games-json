@@ -63,7 +63,7 @@ table#gameDataTable td span.publisherList {
     padding:0 .25em;
     background-color: #cccccc;
     color:darkblue;
-    cursor: pointer;
+    cursor: help;
     display: inline-block;
 }
 

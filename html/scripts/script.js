@@ -54,13 +54,16 @@ const renderGameList = (games) => {
         } else {
             gameHTML += '<td class="noImage">No Image</td>';
         }
-        gameHTML += '<td>';
+        gameHTML += '<td><h3>';
         gameHTML += `<a href='${bggBaseURL}${games[i].id}'>${games[i].title}</a> `;
         if (games[i].yearpublished) {
-            gameHTML += `(${games[i].yearpublished})`;
+            gameHTML += `(${games[i].yearpublished}) </h3>`;
+        }
+        if (games[i].description) {
+            gameHTML += games[i].description;
         }
         if (games[i].publisher) {
-            gameHTML += '<br>';
+            gameHTML += '</td><td>';
             const publisherList = games[i].publisher.split('xxxxx');
             gameHTML += publisherList.shift();
             if (publisherList.length > 0) {
