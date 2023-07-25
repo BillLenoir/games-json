@@ -8,7 +8,7 @@ After downloading the code, run:
 
 Then, from the command line, run (this will take a couple of minutes):
 
-`node hydrate-collection.js [BGG User Name]`
+`node hydrate-collection-json.js [BGG User Name]`
 
 The BGG User Name is optional, will use BillLenoir if one is not provided.
 
