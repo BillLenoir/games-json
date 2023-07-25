@@ -21,10 +21,10 @@ async function fetchAndProcessCollectionData(username) {
         const parsedData = await parseData(rawDataFile);
 
         const dataFiles = [
-            { file: './data/ownData.json', data: parsedData.ownData, message: 'Own File' },
-            { file: './data/wanttobuyData.json', data: parsedData.wanttobuyData, message: 'Want To Buy File' },
-            { file: './data/prevownedData.json', data: parsedData.prevownedData, message: 'Previously Owned File' },
-            { file: './data/fortradeData.json', data: parsedData.fortradeData, message: 'For Sale File' },
+            { file: './data/haveData.json', data: parsedData.haveData, message: 'Games I HAVE file' },
+            { file: './data/wantData.json', data: parsedData.wantData, message: 'Games I WANT File' },
+            { file: './data/hadData.json', data: parsedData.hadData, message: 'Games I HAD File' },
+            { file: './data/sellingData.json', data: parsedData.sellingData, message: 'Games I am SELLING File' },
         ];
 
         // Write each file after the system is done parsing the data.
@@ -64,10 +64,10 @@ async function writeDataToFile(file, data, message) {
 async function parseData(rawData) {
     const data = await fs.readFile(rawData);
     const readData = JSON.parse(data);
-    const ownData = [];
-    const prevownedData = [];
-    const fortradeData = [];
-    const wanttobuyData = [];
+    const haveData = [];
+    const wantData = [];
+    const hadData = [];
+    const sellingData = [];
 
     for (const game of readData.items.item) {
 
@@ -138,16 +138,16 @@ async function parseData(rawData) {
         // This is how we determine in which file the game belongs.
         const { own, wanttobuy, prevowned, fortrade } = game.status._attributes;
         if (own === '1' || wanttobuy === '1' || prevowned === '1' || fortrade === '1') {
-            if (own === '1') ownData.push(gameJSON);
-            if (wanttobuy === '1') wanttobuyData.push(gameJSON);
-            if (prevowned === '1') prevownedData.push(gameJSON);
-            if (fortrade === '1') fortradeData.push(gameJSON);
+            if (own === '1') haveData.push(gameJSON);
+            if (wanttobuy === '1') wantData.push(gameJSON);
+            if (prevowned === '1') hadData.push(gameJSON);
+            if (fortrade === '1') sellingData.push(gameJSON);
         } else {
             console.log(`-- This game doesn't count: ${game.name._text}`);
         }
     }
 
-    return { ownData, wanttobuyData, prevownedData, fortradeData };
+    return { haveData, wantData, hadData, sellingData };
 }
 
 // Not all of the data needed for the website is included in the collection request.

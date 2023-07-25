@@ -1,148 +1,107 @@
-const listDescription = document.getElementById('listDescription');
-const gameData = document.getElementById('gameData');
-const gameDataTable = document.getElementById('gameDataTable');
-
-const paginationTop = document.getElementById('paginationTop');
-const topFirst = document.getElementById('topFirst');
-const topPrev = document.getElementById('topPrev');
-const topGameCount = document.getElementById('topGameCount');
-const topNext = document.getElementById('topNext');
-const topLast = document.getElementById('topLast');
-
-const paginationBottom = document.getElementById('paginationBottom');
-const bottomFirst = document.getElementById('bottomFirst');
-const bottomPrev = document.getElementById('bottomPrev');
-const bottomGameCount = document.getElementById('bottomGameCount');
-const bottomNext = document.getElementById('bottomNext');
-const bottomLast = document.getElementById('bottomLast');
+// All of the HTML elements we manipulate
+const elements = {
+    listDescription: document.querySelector('#listDescription'),
+    gameData: document.querySelector('#gameData'),
+    gameDataTable: document.querySelector('#gameDataTable'),
+    paginationTop: document.querySelector('#paginationTop'),
+    topFirst: document.querySelector('#topFirst'),
+    topPrev: document.querySelector('#topPrev'),
+    topGameCount: document.querySelector('#topGameCount'),
+    topNext: document.querySelector('#topNext'),
+    topLast: document.querySelector('#topLast'),
+    paginationBottom: document.querySelector('#paginationBottom'),
+    bottomFirst: document.querySelector('#bottomFirst'),
+    bottomPrev: document.querySelector('#bottomPrev'),
+    bottomGameCount: document.querySelector('#bottomGameCount'),
+    bottomNext: document.querySelector('#bottomNext'),
+    bottomLast: document.querySelector('#bottomLast'),
+};
 
 let maxPage;
 
 const bggBaseURL = "https://boardgamegeek.com/boardgame/";
 
+// The main function. This makes the call back to the server
+// and triggers the functions that process the response.
 const loadGames = (url) => {
     fetch(url)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then((response) => {
-            response = JSON.parse(response);
-            maxPage = response.pop();
-            renderGameList(response);
+        .then(handleFetchErrors)
+        .then(response => response.json())
+        .then(data => {
+            maxPage = data.pop();
+            renderGameList(data);
             const urlArray = url.split('/');
-            const pageNum = urlArray.pop();
+            const pageNum = Number(urlArray.pop());
             const route = urlArray.join('/');
             renderPagination(pageNum, route);
         })
         .then(() => {
             setWidths();
             window.scrollTo(0, 0);
-        });
-}
+        })
+        .catch(error => console.error('Error:', error.message));
+};
 
+// Finally wrote a catchall error processor
+const handleFetchErrors = (response) => {
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    return response;
+};
+
+// Creates a row in the table for each game.
 const renderGameList = (games) => {
-    listDescription.innerHTML = "Games Bill owns, sorted alphabetically by title.";
-
+    elements.listDescription.textContent = "Games Bill owns, sorted alphabetically by title.";
     let gameHTML = "<table cellspacing='0' cellpadding='0' id='gameDataTable'><tbody>";
-    for (let i = 0; i < games.length; i++) {
+    for (const game of games) {
         gameHTML += '<tr>';
-        if (games[i].thumbnail) {
-            gameHTML += `<td><img src='${games[i].thumbnail}' alt='Cover image for ${games[i].title}'></td>`;
+        if (game.thumbnail) {
+            gameHTML += `<td><img src='${game.thumbnail}' alt='Cover image for ${game.title}'></td>`;
         } else {
             gameHTML += '<td class="noImage">No Image</td>';
         }
-        gameHTML += '<td><h3>';
-        gameHTML += `<a href='${bggBaseURL}${games[i].id}'>${games[i].title}</a> `;
-        if (games[i].yearpublished) {
-            gameHTML += `(${games[i].yearpublished}) </h3>`;
-        }
-        if (games[i].description) {
-            gameHTML += games[i].description;
-        }
-        if (games[i].publisher) {
-            gameHTML += '</td><td>';
-            const publisherList = games[i].publisher.split('xxxxx');
-            gameHTML += publisherList.shift();
-            if (publisherList.length > 0) {
-                const otherPublishers = publisherList.join(', ');
-                gameHTML += ` <span class='publisherList' title='${otherPublishers}'>+ ${publisherList.length} more</span>`;
-            }
-        }
-        gameHTML += '</td>';
+        gameHTML += `<td>
+          <h3><a href="${bggBaseURL}${game.id}">${game.title}</a> ${game.yearpublished ? `(${game.yearpublished})` : ''}</h3>
+          ${game.description ? game.description : ''}</td>`;
+        gameHTML += `<td class='people'>${game.publisher ? getPublisherHTML(game.publisher) : ''}</td>`;
         gameHTML += '</tr>';
     }
     gameHTML += "</tbody></table>";
-    gameData.innerHTML = gameHTML;
+    elements.gameData.innerHTML = gameHTML;
+};
 
-}
+// Publisher data needs some extra process because there might be more than one
+// The data is formatted difference for 1 publisher vs. multiple.
+const getPublisherHTML = (publisher) => {
+    const publisherList = publisher.split('xxxxx');
+    let html = publisherList.shift();
+    if (publisherList.length > 0) {
+        const otherPublishers = publisherList.join(', ');
+        html += ` <span class='publisherList' title='${otherPublishers}'>+ ${publisherList.length} more</span>`;
+    }
+    return html;
+};
 
+// Turns off/on the pagination buttons depending upon which page the user is viewing.
 const renderPagination = (pageNum, route) => {
-    pageNum = Number(pageNum);
-    let newPageNum;
+    elements.topFirst.disabled = elements.bottomFirst.disabled = pageNum <= 2;
+    elements.topFirst.onclick = elements.bottomFirst.onclick = () => loadGames(`${route}/1`);
 
-    if (pageNum > 2) {
-        newPageNum = 1;
-        topFirst.removeAttribute('disabled');
-        topFirst.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-        bottomFirst.removeAttribute('disabled');
-        bottomFirst.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-    } else {
-        topFirst.removeAttribute('onclick');
-        topFirst.setAttribute('disabled', '');
-        bottomFirst.removeAttribute('onclick');
-        bottomFirst.setAttribute('disabled', '');
-    }
+    elements.topPrev.disabled = elements.bottomPrev.disabled = pageNum <= 1;
+    elements.topPrev.onclick = elements.bottomPrev.onclick = () => loadGames(`${route}/${pageNum - 1}`);
 
-    if (pageNum > 1) {
-        newPageNum = pageNum - 1;
-        topPrev.removeAttribute('disabled');
-        topPrev.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-        bottomPrev.removeAttribute('disabled');
-        bottomPrev.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-    } else {
-        topPrev.removeAttribute('onclick');
-        topPrev.setAttribute('disabled', '');
-        bottomPrev.removeAttribute('onclick');
-        bottomPrev.setAttribute('disabled', '');
-    }
+    elements.topGameCount.textContent = elements.bottomGameCount.textContent = `Page ${pageNum} of ${maxPage}`;
 
-    topGameCount.innerHTML = `Page ${pageNum} of ${maxPage}`;
-    bottomGameCount.innerHTML = `Page ${pageNum} of ${maxPage}`;
+    elements.topNext.disabled = elements.bottomNext.disabled = pageNum >= maxPage;
+    elements.topNext.onclick = elements.bottomNext.onclick = () => loadGames(`${route}/${pageNum + 1}`);
 
-    if (pageNum < maxPage) {
-        newPageNum = pageNum + 1;
-        topNext.removeAttribute('disabled');
-        topNext.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-        bottomNext.removeAttribute('disabled');
-        bottomNext.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-    } else {
-        topNext.removeAttribute('onclick');
-        topNext.setAttribute('disabled', '');
-        bottomNext.removeAttribute('onclick');
-        bottomNext.setAttribute('disabled', '');
-    }
+    elements.topLast.disabled = elements.bottomLast.disabled = pageNum >= maxPage - 1;
+    elements.topLast.onclick = elements.bottomLast.onclick = () => loadGames(`${route}/${maxPage}`);
+};
 
-    if (pageNum < maxPage - 1) {
-        newPageNum = maxPage;
-        topLast.removeAttribute('disabled');
-        topLast.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-        bottomLast.removeAttribute('disabled');
-        bottomLast.setAttribute('onclick', `loadGames("/games/own/${newPageNum}")`);
-    } else {
-        topLast.removeAttribute('onclick');
-        topLast.setAttribute('disabled', '');
-        bottomLast.removeAttribute('onclick');
-        bottomLast.setAttribute('disabled', '');
-    }
-
-}
-
+// Makes the pagination width equal to the game table's width.
 const setWidths = () => {
     newWidth = document.getElementById('gameDataTable').clientWidth;
-    listDescription.style.width =  `${newWidth}px`;
-    paginationTop.style.width = `${newWidth}px`;
-    paginationBottom.style.width = `${newWidth}px`;
+    listDescription.style.width = paginationTop.style.width = paginationBottom.style.width = `${newWidth}px`;
 }
