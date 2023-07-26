@@ -5,7 +5,7 @@ const bggBaseURL = 'https://boardgamegeek.com/xmlapi/';
 
 // This is the main function. It triggers all of the work needed
 // to request, transform, process, and save the collection data.
-async function fetchAndProcessCollectionData(username) {
+async function fetchAndProcessCollectionData(username:string) {
     try {
 
         // Fetch the data from BGG.
@@ -38,7 +38,7 @@ async function fetchAndProcessCollectionData(username) {
 
 // Requests the data from BGG, which returns XML. 
 // Transform the XML into JSON and return it.
-async function fetchCollectionDataFromBGG(username) {
+async function fetchCollectionDataFromBGG(username: string) {
     const collectionDataRequest = new Request(`${bggBaseURL}collection/${username}`);
     const response = await fetch(collectionDataRequest);
 
@@ -53,7 +53,7 @@ async function fetchCollectionDataFromBGG(username) {
 }
 
 // Handles all writing to disk.
-async function writeDataToFile(file, data, message) {
+async function writeDataToFile(file: string, data: object, message: string) {
     await fs.writeFile(file, JSON.stringify(data));
     console.log(`${message} successfully written`);
 }
@@ -61,7 +61,7 @@ async function writeDataToFile(file, data, message) {
 // Once the collection request has been returned, transformed and saved to disk,
 // open the newly saved file and transform each game's games data and save it 
 // in the appropriate data file.
-async function parseData(rawData) {
+async function parseData(rawData: string) {
     const data = await fs.readFile(rawData);
     const readData = JSON.parse(data);
     const haveData = [];
@@ -152,7 +152,7 @@ async function parseData(rawData) {
 
 // Not all of the data needed for the website is included in the collection request.
 // When parsing the data, make a request for each game. (There's a bunch.)
-async function fetchGameDataFromBGG(gameID) {
+async function fetchGameDataFromBGG(gameID: string) {
     const gameDataRequest = new Request(`${bggBaseURL}boardgame/${gameID}`);
     const response = await fetch(gameDataRequest);
 
@@ -170,6 +170,6 @@ async function fetchGameDataFromBGG(gameID) {
 
 // The BGG user ID is an optional paramater when running the system.
 // If not present, set to my user name.
-const user = process.argv[2] || 'BillLenoir';
+const user: string = process.argv[2] || 'BillLenoir';
 
 fetchAndProcessCollectionData(user);
