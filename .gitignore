@@ -1,8 +1,9 @@
-# Modules #
-###########
+# Things Bill doesn't want tracked #
+####################################
 
 node_modules/
 clipboard/
+hydrate-collection-json.js
 
 # Compiled source #
 ###################
