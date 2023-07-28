@@ -3,7 +3,10 @@
 
 node_modules/
 clipboard/
+.vscode/
 hydrate-collection-json.js
+app.js
+.eslintrc.json
 
 # Compiled source #
 ###################
